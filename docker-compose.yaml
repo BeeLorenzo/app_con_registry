@@ -1,0 +1,39 @@
+# Use root/example as user/password credentials
+services:
+  app:
+    image: hub.labosamt.ch/gepe/progettoconregistry:1
+    ports: 
+    - 9000:5000
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: 'db'
+      DB_PORT: 3306
+      DB_NAME: ${DATABASE}
+      DB_USER: ${USER}
+      DB_PASS: ${PASSWORD}
+
+  db:
+    env_file: "./.env"
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE}
+      MYSQL_USER: ${USER}
+      MYSQL_PASSWORD: ${PASSWORD}
+    # (per vedere se è già su il DB tramite MySQL dopo, toglilo per non essere + accessibile allo stack, tanto non serve specificarlo dato che sono parte della stessa rete)
+    # ports: 
+    # - 3306:3306
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # tramite $$ puoi spostare il ROOT_PASSWORD di sopra e metterlo qui sotto automaticamente (questo test è x MySQL, per MariaDB trovalo altrove)
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql-data:
